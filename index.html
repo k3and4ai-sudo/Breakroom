@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CE製品の広場</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Noto Sans JP', sans-serif; background: #f4f3ee; min-height: 100vh; }
+
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    /* パスワード画面 */
+    .pw-wrap {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+    /* 背景動画 */
+    #bg-video {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+      z-index: 0;
+    }
+    /* 動画の上に暗めのオーバーレイ */
+    .pw-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.45);
+      z-index: 1;
+    }
+    .pw-box {
+      position: relative;
+      z-index: 2;
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 0.5px solid rgba(255,255,255,0.3);
+      border-radius: 16px;
+      padding: 2.5rem 2rem;
+      width: 320px;
+      text-align: center;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    }
+    .pw-icon { font-size: 36px; color: #c9c2ff; margin-bottom: 1.25rem; }
+    .pw-sub { font-size: 13px; color: rgba(255,255,255,0.85); margin-bottom: 1.5rem; }
+    .pw-input {
+      width: 100%; padding: 10px 14px; font-size: 15px; font-family: inherit;
+      border: 0.5px solid rgba(255,255,255,0.4);
+      border-radius: 8px;
+      background: rgba(255,255,255,0.15);
+      color: #fff;
+      letter-spacing: 0.15em;
+      text-align: center;
+      margin-bottom: 0.75rem;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .pw-input::placeholder { color: rgba(255,255,255,0.5); }
+    .pw-input:focus { border-color: #c9c2ff; }
+    .pw-btn {
+      width: 100%; padding: 10px;
+      background: #7f77dd; color: white;
+      border: none; border-radius: 8px;
+      font-size: 14px; font-family: inherit; font-weight: 500;
+      cursor: pointer; transition: background 0.15s;
+    }
+    .pw-btn:hover { background: #534ab7; }
+    .pw-error { font-size: 12px; color: #ffaaaa; margin-top: 0.5rem; min-height: 18px; }
+
+    /* 終了画面 */
+    .end-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #f4f3ee; }
+    .end-box { background: #fff; border: 0.5px solid #e0ddd5; border-radius: 12px; padding: 2.5rem 2rem; width: 320px; text-align: center; box-shadow: 0 2px 16px rgba(0,0,0,0.06); }
+    .end-icon { font-size: 36px; color: #a32d2d; margin-bottom: 1rem; }
+    .end-title { font-size: 17px; font-weight: 500; color: #222; margin-bottom: 0.5rem; }
+    .end-sub { font-size: 13px; color: #888; }
+
+    /* サイト本体 */
+    .site { background: #f4f3ee; min-height: 100vh; padding-bottom: 3rem; }
+    .header { background: #1a1a2e; color: white; padding: 1.5rem 2rem; display: flex; align-items: center; justify-content: space-between; }
+    .header-title { font-family: 'DM Serif Display', serif; font-size: 22px; letter-spacing: 0.02em; color: #f0e6ff; }
+    .header-sub { font-size: 12px; color: #a89bc8; margin-top: 2px; }
+    .online-badge { background: #2a2a4e; color: #9f7fff; font-size: 12px; padding: 4px 10px; border-radius: 20px; border: 0.5px solid #5a4a9e; }
+    .main { max-width: 760px; margin: 0 auto; padding: 1.5rem 1rem; display: grid; gap: 1.25rem; }
+    .section-label { font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.75rem; font-weight: 500; }
+    .card { background: #fff; border-radius: 12px; border: 0.5px solid #e0ddd5; overflow: hidden; }
+    .card-header { padding: 1rem 1.25rem 0.75rem; border-bottom: 0.5px solid #e0ddd5; display: flex; align-items: center; gap: 8px; }
+    .card-header i { font-size: 18px; color: #7f77dd; }
+    .card-header span { font-size: 15px; font-weight: 500; color: #222; }
+    .news-list { padding: 0.5rem 0; }
+    .news-item { padding: 0.75rem 1.25rem; border-bottom: 0.5px solid #e0ddd5; display: flex; gap: 1rem; align-items: flex-start; transition: background 0.15s; }
+    .news-item:hover { background: #f9f8f5; }
+    .news-item:last-child { border-bottom: none; }
+    .news-tag { font-size: 11px; padding: 2px 8px; border-radius: 10px; white-space: nowrap; margin-top: 2px; font-weight: 500; }
+    .tag-info { background: #e6f1fb; color: #185fa5; }
+    .tag-event { background: #eeedfe; color: #534ab7; }
+    .tag-urgent { background: #fcebeb; color: #a32d2d; }
+    .news-body { flex: 1; }
+    .news-title { font-size: 14px; color: #222; font-weight: 500; margin-bottom: 3px; }
+    .news-meta { font-size: 12px; color: #888; }
+    .events-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+    .event-card { padding: 1rem 1.25rem; border-right: 0.5px solid #e0ddd5; position: relative; }
+    .event-card:last-child { border-right: none; }
+    .event-date { font-size: 11px; color: #888; margin-bottom: 6px; display: flex; align-items: center; gap: 4px; }
+    .event-title { font-size: 14px; font-weight: 500; color: #222; margin-bottom: 4px; }
+    .event-detail { font-size: 12px; color: #888; display: flex; align-items: center; gap: 4px; margin-bottom: 3px; }
+    .event-dot { width: 6px; height: 6px; border-radius: 50%; position: absolute; top: 1rem; right: 1.25rem; }
+    .dot-soon { background: #e24b4a; }
+    .dot-upcoming { background: #1d9e75; }
+    .dot-far { background: #888780; }
+    .rsvp-row { display: flex; align-items: center; gap: 6px; margin-top: 8px; }
+    .rsvp-btn { font-size: 11px; padding: 3px 10px; border-radius: 20px; border: 0.5px solid #ccc; background: transparent; color: #888; cursor: pointer; font-family: inherit; transition: all 0.15s; }
+    .rsvp-btn:hover { background: #eeedfe; color: #534ab7; border-color: #afa9ec; }
+    .rsvp-btn.active { background: #7f77dd; color: white; border-color: #7f77dd; }
+    .members-row { padding: 1rem 1.25rem; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 500; color: white; }
+    .av-purple { background: #7f77dd; }
+    .av-teal { background: #1d9e75; }
+    .av-coral { background: #d85a30; }
+    .member-count { font-size: 12px; color: #888; margin-left: 4px; }
+  </style>
+</head>
+<body>
+
+<!-- パスワード画面 -->
+<div id="screen-pw" class="screen active">
+  <div class="pw-wrap">
+    <!-- 背景動画 ※ファイルと同じフォルダに置く場合はそのままでOK -->
+    <video id="bg-video" autoplay muted playsinline webkit-playsinline>
+      <source src="LoginVideo.mp4" type="video/mp4">
+    </video>
+    <div class="pw-overlay"></div>
+    <!-- タップで音声ON＆パスワード画面表示 -->
+    <div id="play-overlay" style="position:absolute;inset:0;z-index:3;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;" onclick="startVideo()">
+      <div style="width:72px;height:72px;border-radius:50%;background:rgba(255,255,255,0.2);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:2px solid rgba(255,255,255,0.5);display:flex;align-items:center;justify-content:center;margin-bottom:12px;">
+        <i class="ti ti-volume" style="font-size:32px;color:white;" aria-hidden="true"></i>
+      </div>
+      <div style="font-size:13px;color:rgba(255,255,255,0.85);font-family:'Noto Sans JP',sans-serif;">タップして音声をON</div>
+    </div>
+    <div class="pw-box" id="pw-box" style="display:none;">
+      <div class="pw-icon"><i class="ti ti-lock"></i></div>
+      <div class="pw-sub">ユーザー名とパスワードを入力してください</div>
+      <input class="pw-input" type="text" id="name-input" placeholder="ユーザー名" maxlength="20" autocomplete="off" />
+      <input class="pw-input" type="password" id="pw-input" placeholder="••••••" maxlength="20" />
+      <button class="pw-btn" id="pw-btn">入室する</button>
+      <div class="pw-error" id="pw-error"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 終了画面 -->
+<div id="screen-end" class="screen">
+  <div class="end-wrap">
+    <div class="end-box">
+      <div class="end-icon"><i class="ti ti-lock-x"></i></div>
+      <div class="end-title">アクセスできません</div>
+      <div class="end-sub">パスワードが正しくありませんでした。<br>このページは表示できません。</div>
+    </div>
+  </div>
+</div>
+
+<!-- サイト本体 -->
+<div id="screen-site" class="screen">
+  <div class="site">
+    <div class="header">
+      <div>
+        <div class="header-title">✦ CE製品の広場</div>
+        <div class="header-sub">友人グループ情報共有サイト</div>
+      </div>
+      <div class="online-badge"><i class="ti ti-users" style="font-size:12px;margin-right:4px;"></i>3人のメンバー</div>
+    </div>
+    <div class="main">
+      <div>
+        <div class="section-label">お知らせ</div>
+        <div class="card">
+          <div class="card-header"><i class="ti ti-speakerphone"></i><span>最新のお知らせ</span></div>
+          <div class="news-list">
+            <div class="news-item"><span class="news-tag tag-urgent">重要</span><div class="news-body"><div class="news-title">7月の旅行の幹事が決まりました！</div><div class="news-meta">Aさん · 2時間前</div></div></div>
+            <div class="news-item"><span class="news-tag tag-info">情報</span><div class="news-body"><div class="news-title">新しいお店を発見したのでシェアします 🍜</div><div class="news-meta">Bさん · 昨日</div></div></div>
+            <div class="news-item"><span class="news-tag tag-event">イベント</span><div class="news-body"><div class="news-title">BBQ の参加者を募集しています</div><div class="news-meta">Cさん · 3日前</div></div></div>
+            <div class="news-item"><span class="news-tag tag-info">情報</span><div class="news-body"><div class="news-title">LINEのグループルール更新しました</div><div class="news-meta">管理人 · 1週間前</div></div></div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="section-label">イベント・スケジュール</div>
+        <div class="card">
+          <div class="card-header"><i class="ti ti-calendar-event"></i><span>今後の予定</span></div>
+          <div class="events-grid">
+            <div class="event-card">
+              <div class="event-dot dot-soon"></div>
+              <div class="event-date"><i class="ti ti-clock"></i>6月14日（土）</div>
+              <div class="event-title">近所でランチ会</div>
+              <div class="event-detail"><i class="ti ti-map-pin"></i>梅田・カフェOGA</div>
+              <div class="event-detail"><i class="ti ti-users"></i>3人参加予定</div>
+              <div class="rsvp-row"><button class="rsvp-btn active">参加 ✓</button><button class="rsvp-btn">未定</button></div>
+            </div>
+            <div class="event-card">
+              <div class="event-dot dot-upcoming"></div>
+              <div class="event-date"><i class="ti ti-clock"></i>7月5日（土）</div>
+              <div class="event-title">夏の日帰り旅行</div>
+              <div class="event-detail"><i class="ti ti-map-pin"></i>京都・嵐山エリア</div>
+              <div class="event-detail"><i class="ti ti-users"></i>2人参加予定</div>
+              <div class="rsvp-row"><button class="rsvp-btn">参加する</button><button class="rsvp-btn">未定</button></div>
+            </div>
+            <div class="event-card">
+              <div class="event-dot dot-far"></div>
+              <div class="event-date"><i class="ti ti-clock"></i>8月中旬（調整中）</div>
+              <div class="event-title">BBQ大会</div>
+              <div class="event-detail"><i class="ti ti-map-pin"></i>未定</div>
+              <div class="event-detail"><i class="ti ti-users"></i>計画中</div>
+              <div class="rsvp-row"><button class="rsvp-btn">興味あり</button></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="section-label">メンバー</div>
+        <div class="card">
+          <div class="card-header"><i class="ti ti-users"></i><span>グループメンバー</span></div>
+          <div class="members-row">
+            <div class="avatar av-purple" title="Aさん">A</div>
+            <div class="avatar av-teal" title="Bさん">B</div>
+            <div class="avatar av-coral" title="Cさん">C</div>
+            <span class="member-count">3人のメンバー</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function startVideo() {
+    const video = document.getElementById('bg-video');
+    video.muted = false;
+    const playPromise = video.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(() => {
+        video.muted = true;
+        video.play();
+      });
+    }
+    document.getElementById('play-overlay').style.display = 'none';
+    document.getElementById('pw-box').style.display = 'block';
+  }
+
+  const video = document.getElementById('bg-video');
+  video.addEventListener('canplaythrough', () => {
+    video.play().catch(() => {});
+  });
+
+  // LINEアプリ内ブラウザの検出
+  if (/Line/i.test(navigator.userAgent)) {
+    document.getElementById('play-overlay').innerHTML = `
+      <div style="background:rgba(255,255,255,0.15);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.3);border-radius:14px;padding:1.5rem;width:260px;text-align:center;">
+        <i class="ti ti-alert-triangle" style="font-size:28px;color:#ffd166;margin-bottom:8px;display:block;" aria-hidden="true"></i>
+        <div style="font-size:13px;color:#fff;line-height:1.7;margin-bottom:12px;">LINE内のブラウザでは動画が正しく再生されない場合があります。右上の「⋮」または「他のアプリで開く」から、Chromeなどのブラウザで開いてください。</div>
+      </div>`;
+  }
+
+  let login_Name = '';
+  const CORRECT = 'MELMB';
+  function show(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+  function check() {
+    login_Name = document.getElementById('name-input').value;
+    const val = document.getElementById('pw-input').value;
+    if (val === CORRECT) {
+      show('screen-site');
+    } else {
+      show('screen-end');
+    }
+  }
+  document.getElementById('pw-btn').addEventListener('click', check);
+  document.getElementById('pw-input').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') check();
+  });
+  document.querySelectorAll('.rsvp-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const row = this.closest('.rsvp-row');
+      row.querySelectorAll('.rsvp-btn').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+    });
+  });
+</script>
+</body>
+</html>
